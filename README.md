@@ -27,7 +27,7 @@ git pull origin main
 git checkout -b feature/cotizacion
 
 # 3. Editar código (crear sus páginas en React)
-- Usar VS Code o su editor favorito
+- Usar Cursor o su editor de código favorito
 - Los cambios se guardan en su computadora NORMALMENTE
 
 # 4. Mientras desarrolla, Docker sigue corriendo
@@ -40,4 +40,4 @@ git commit -m "Agrega página de cotización con formulario"
 git push origin feature/cotizacion
 
 # 6. Crear Pull Request en GitHub (desde la web)
- Pablo revisA y hace merge a main
+ Pablo revisa y hace merge a main
