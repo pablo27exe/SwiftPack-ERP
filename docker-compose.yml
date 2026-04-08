@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  # Backend de FastAPI
+  backend:
+    build: ./backend-fastapi
+    container_name: swiftpack-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend-fastapi:/app
+    environment:
+      - SECRET_KEY=mi_clave_secreta_para_desarrollo
+    networks:
+      - swiftpack-network
+
+  # Frontend de React
+  frontend:
+    build: ./frontend-react
+    container_name: swiftpack-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend-react:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - swiftpack-network
+
+# Red para que los contenedores se comuniquen
+networks:
+  swiftpack-network:
+    driver: bridge
