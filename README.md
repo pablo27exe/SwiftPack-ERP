@@ -1,43 +1,16 @@
-# SwiftPack ERP
+# React + Vite
 
-## Cada integrante hace esto UNA SOLA VEZ
-- git clone https://github.com/tu-usuario/swiftpack-erp.git
-- cd swiftpack-erp
-- docker-compose up --build
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-  
+Currently, two official plugins are available:
 
-## Iniciar backend 
-```bash 
-cd backend-fastapi 
-venv\Scripts\activate 
-uvicorn app.main:app --reload --port 8000 
-``` 
- 
-## Iniciar frontend 
-```bash 
-cd frontend-react 
-npm run dev 
-```
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-# 1. Asegurarse de tener la última versión
-git pull origin main
+## React Compiler
 
-# 2. Crear rama para su feature
-git checkout -b feature/cotizacion
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-# 3. Editar código (crear sus páginas en React)
-- Usar Cursor o su editor de código favorito
-- Los cambios se guardan en su computadora NORMALMENTE
+## Expanding the ESLint configuration
 
-# 4. Mientras desarrolla, Docker sigue corriendo
-- El frontend se actualiza automáticamente (hot reload)
-- Solo guardar el archivo y ver el cambio en el navegador
-
-# 5. Cuando termina la página, sube sus cambios
-git add .
-git commit -m "Agrega página de cotización con formulario"
-git push origin feature/cotizacion
-
-# 6. Crear Pull Request en GitHub (desde la web)
- Pablo revisa y hace merge a main
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
