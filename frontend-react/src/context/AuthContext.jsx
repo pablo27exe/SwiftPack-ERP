@@ -1,8 +1,19 @@
-import { createContext, useState, useEffect } from 'react'
+import { createContext, useState, useContext, useEffect } from 'react'
 import api from '../services/api'
 
+// Crear el contexto
 export const AuthContext = createContext()
 
+// Hook personalizado para usar el contexto
+export const useAuth = () => {
+  const context = useContext(AuthContext)
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider')
+  }
+  return context
+}
+
+// Provider del contexto
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -12,7 +23,12 @@ export const AuthProvider = ({ children }) => {
     const storedUser = localStorage.getItem('user')
     
     if (token && storedUser) {
-      setUser(JSON.parse(storedUser))
+      try {
+        setUser(JSON.parse(storedUser))
+      } catch (e) {
+        console.error('Error parsing user:', e)
+        localStorage.removeItem('user')
+      }
     }
     setLoading(false)
   }, [])
@@ -41,8 +57,10 @@ export const AuthProvider = ({ children }) => {
     setUser(null)
   }
 
+  const isAuthenticated = !!user
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   )
