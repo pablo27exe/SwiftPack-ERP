@@ -16,13 +16,14 @@ const Navbar = () => {
         <div className="flex justify-between items-center">
           {/* Logo */}
           <Link to="/" className="text-xl font-bold">
-            SwiftPack 🚚
+            SwiftPack
           </Link>
 
           {/* Links centrales */}
           <div className="flex space-x-6">
             <Link to="/" className="hover:text-blue-200">Inicio</Link>
             <Link to="/cotizar" className="hover:text-blue-200">Cotizar</Link>
+            <Link to="/registro-envio" className="hover:text-blue-200">Registrar</Link>
             <Link to="/rastrear" className="hover:text-blue-200">Rastrear</Link>
           </div>
 
