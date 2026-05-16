@@ -1,13 +1,11 @@
+import './App.css'
 import { AuthProvider } from './context/AuthContext'
-import { EnvioProvider } from './context/EnvioContext'
 import AppRoutes from './routes/AppRoutes'
 
-function App(){
+function App() {
   return (
     <AuthProvider>
-      <EnvioProvider>
-        <AppRoutes />
-      </EnvioProvider>
+      <AppRoutes />
     </AuthProvider>
   )
 }
