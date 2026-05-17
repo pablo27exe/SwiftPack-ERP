@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+# Importar los routers
+from app.api import cotizacion, rastreo
+
 app = FastAPI(
     title="SwiftPack ERP API",
     description="API del Sistema de Gestión ERP para SwiftPack",
@@ -15,6 +18,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Incluir los routers
+app.include_router(cotizacion.router, prefix="/api/cotizacion", tags=["Cotización"])
+app.include_router(rastreo.router, prefix="/api/rastreo", tags=["Rastreo"])
 
 @app.get("/")
 def root():
