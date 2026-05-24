@@ -32,12 +32,31 @@ const CardNav = ({
 
   const handleButtonClick = () => {
     if (isAuthenticated) {
-      if (user?.rol === 'admin') navigate('/admin/dashboard');
-      else if (user?.rol === 'cliente') navigate('/cliente/dashboard');
+      if (user?.rol === 'admin' || user?.rol === 'operador') {
+        navigate('/admin/dashboard');
+      } else if (user?.rol === 'cliente') {
+        navigate('/cliente/dashboard');
+      }
     } else {
       navigate('/login');
     }
     if (isExpanded) toggleMenu();
+  };
+
+  // Filtrar items según el rol del usuario
+  const getFilteredItems = () => {
+    if (!items) return [];
+    
+    // Si no está autenticado, mostrar solo items públicos
+    if (!isAuthenticated) {
+      return items.filter(item => item.roles?.includes('public') || !item.roles);
+    }
+    
+    // Si está autenticado, filtrar por su rol
+    return items.filter(item => {
+      if (!item.roles) return true;
+      return item.roles.includes(user?.rol);
+    });
   };
 
   const calculateHeight = () => {
@@ -150,13 +169,15 @@ const CardNav = ({
     if (el) cardsRef.current[i] = el;
   };
 
-  // Obtener el nombre del botón según autenticación
   const getButtonText = () => {
     if (isAuthenticated) {
-      return user?.rol === 'admin' ? 'Panel Admin' : 'Mi Cuenta';
+      if (user?.rol === 'admin' || user?.rol === 'operador') return 'Panel Admin';
+      if (user?.rol === 'cliente') return 'Mi Cuenta';
     }
     return 'Iniciar Sesión';
   };
+
+  const filteredItems = getFilteredItems();
 
   return (
     <div className={`card-nav-container ${className}`}>
@@ -195,7 +216,7 @@ const CardNav = ({
         </div>
 
         <div className="card-nav-content" aria-hidden={!isExpanded}>
-          {(items || []).slice(0, 4).map((item, idx) => (
+          {filteredItems.map((item, idx) => (
             <div
               key={`${item.label}-${idx}`}
               className="nav-card"
@@ -217,13 +238,25 @@ const CardNav = ({
                   </Link>
                 ))}
               </div>
-              {item.showLogout && (
-                <button onClick={handleLogout} className="nav-card-logout-btn">
-                  Cerrar Sesión
-                </button>
-              )}
             </div>
           ))}
+          
+          {/* Botón de cerrar sesión dentro del menú (solo para autenticados) */}
+          {isAuthenticated && (
+            <div className="nav-card nav-card-logout" style={{ backgroundColor: '#ef4444', color: '#ffffff' }}>
+              <div className="nav-card-label">Cuenta</div>
+              <div className="nav-card-links">
+                <button
+                  onClick={handleLogout}
+                  className="nav-card-link"
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left', padding: 0, color: 'inherit' }}
+                >
+                  <GoArrowUpRight className="nav-card-link-icon" />
+                  Cerrar Sesión
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </nav>
     </div>

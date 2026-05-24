@@ -8,6 +8,7 @@ const navItems = [
     label: "Servicios",
     bgColor: "#11519c",
     textColor: "#ffffff",
+    roles: ["public", "cliente", "admin", "operador"],
     links: [
       { label: "Cotizar Envío", href: "/cotizar", ariaLabel: "Cotizar envío" },
       { label: "Registrar Envío", href: "/registro-envio", ariaLabel: "Registrar envío" },
@@ -18,6 +19,7 @@ const navItems = [
     label: "Mi Cuenta",
     bgColor: "#2e89c6",
     textColor: "#ffffff",
+    roles: ["cliente"],
     links: [
       { label: "Dashboard", href: "/cliente/dashboard", ariaLabel: "Mi dashboard" },
       { label: "Mis Envíos", href: "/cliente/envios", ariaLabel: "Mis envíos" },
@@ -29,6 +31,7 @@ const navItems = [
     label: "Administración",
     bgColor: "#ef5a07",
     textColor: "#ffffff",
+    roles: ["admin", "operador"],
     links: [
       { label: "Dashboard Admin", href: "/admin/dashboard", ariaLabel: "Panel de administración" },
       { label: "Gestionar Envíos", href: "/admin/envios", ariaLabel: "Gestionar envíos" },
@@ -42,10 +45,10 @@ const navItems = [
     label: "Soporte",
     bgColor: "#fd8106",
     textColor: "#ffffff",
+    roles: ["public", "cliente", "admin", "operador"],
     links: [
       { label: "Ayuda", href: "/ayuda", ariaLabel: "Centro de ayuda" },
-      { label: "Contacto", href: "/contacto", ariaLabel: "Contactar soporte" },
-      { label: "Cerrar Sesión", href: "#", ariaLabel: "Cerrar sesión", isLogout: true }
+      { label: "Contacto", href: "/contacto", ariaLabel: "Contactar soporte" }
     ]
   }
 ];
@@ -53,7 +56,6 @@ const navItems = [
 const PublicLayout = () => {
   return (
     <div className="flex flex-col min-h-screen">
-      {/* CardNav flotante */}
       <CardNav
         items={navItems}
         baseColor="#ffffff"
@@ -63,7 +65,6 @@ const PublicLayout = () => {
         ease="power3.out"
       />
       
-      {/* Contenido principal con padding-top para evitar que quede debajo del CardNav */}
       <main className="flex-grow pt-24">
         <Outlet />
       </main>
