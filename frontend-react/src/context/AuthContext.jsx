@@ -34,22 +34,39 @@ export const AuthProvider = ({ children }) => {
   }, [])
 
   const login = async (email, password) => {
-    try {
-      const response = await api.post('/api/auth/login', { email, password })
-      const { access_token, user: userData } = response.data
-      
-      localStorage.setItem('access_token', access_token)
-      localStorage.setItem('user', JSON.stringify(userData))
-      setUser(userData)
-      
-      return { success: true }
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.detail || 'Error al iniciar sesión' 
-      }
+  try {
+    console.log('🔐 Intentando login con:', email)
+    
+    const response = await api.post('/api/auth/login', { email, password })
+    
+    console.log('📦 Respuesta completa:', response)
+    console.log('📦 Data recibida:', response.data)
+    
+    const { access_token, user: userData } = response.data
+    
+    console.log('🔑 Token:', access_token)
+    console.log('👤 Usuario:', userData)
+    
+    if (!access_token) {
+      console.error('❌ No se recibió token')
+      return { success: false, error: 'No se recibió token de autenticación' }
+    }
+    
+    localStorage.setItem('access_token', access_token)
+    localStorage.setItem('user', JSON.stringify(userData))
+    setUser(userData)
+    
+    console.log('✅ Login exitoso, usuario guardado')
+    return { success: true }
+  } catch (error) {
+    console.error('❌ Error en login:', error)
+    console.error('❌ Response error:', error.response)
+    return { 
+      success: false, 
+      error: error.response?.data?.detail || 'Error al iniciar sesión' 
     }
   }
+}
 
   const logout = () => {
     localStorage.removeItem('access_token')

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useAuth } from '../../hooks/useAuth'
 import { useNavigate, Link } from 'react-router-dom'
 import api from '../../services/api'
 
@@ -254,6 +255,7 @@ const InputField = ({ label, optional, icon, ...inputProps }) => {
 }
 
 const RegisterPage = () => {
+  const { login } = useAuth() 
   const [nombre, setNombre] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -271,15 +273,27 @@ const RegisterPage = () => {
     setLoading(true)
 
     try {
-      await api.post('/api/auth/register', { nombre, email, password, telefono })
-      setSuccess('Registro exitoso. Redirigiendo al login...')
-      setTimeout(() => navigate('/login'), 2000)
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Error al registrar usuario')
-    } finally {
-      setLoading(false)
+    // 1. Registrar usuario
+    await api.post('/api/auth/register', { nombre, email, password, telefono })
+    
+    // 2. Iniciar sesión automáticamente
+    const result = await login(email, password)
+    
+    if (result.success) {
+      // 3. Redirigir al home (ya autenticado)
+      navigate('/')
+    } else {
+      setError('Cuenta creada. Por favor inicia sesión manualmente.')
+      setTimeout(() => {
+        navigate('/login')
+      }, 2000)
     }
+  } catch (err) {
+    setError(err.response?.data?.detail || 'Error al registrar usuario')
+  } finally {
+    setLoading(false)
   }
+}
 
   return (
     <>
