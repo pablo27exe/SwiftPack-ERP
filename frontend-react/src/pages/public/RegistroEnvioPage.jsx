@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 
 // ─── Shared design tokens ────────────────────────────────────────────────────
@@ -29,6 +30,11 @@ const Icon = {
   user: (p = {}) => (
     <svg {...p} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+    </svg>
+  ),
+  phone: (p = {}) => (
+    <svg {...p} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16z" />
     </svg>
   ),
   mapPin: (p = {}) => (
@@ -125,17 +131,23 @@ const STEPS = [
 
 // ─── Component ───────────────────────────────────────────────────────────────
 const RegistroEnvioPage = () => {
+  const navigate = useNavigate()
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({
     remitente_nombre: '',
+    remitente_telefono: '',
     remitente_direccion: '',
     destinatario_nombre: '',
+    destinatario_telefono: '',
     destinatario_direccion: '',
-    paquete_descripcion: '',
-    paquete_peso: '',
+    origen: '',
+    destino: '',
+    peso: '',
+    tipo_servicio: 'estandar',
   })
   const [mensaje, setMensaje] = useState({ tipo: '', texto: '' })
   const [animKey, setAnimKey] = useState(0)
+  const [loading, setLoading] = useState(false)
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -156,20 +168,52 @@ const RegistroEnvioPage = () => {
       alert('Por favor completa los datos del destinatario')
       return
     }
+    if (step === 3 && (!formData.origen || !formData.destino || !formData.peso)) {
+      alert('Por favor completa origen, destino y peso del paquete')
+      return
+    }
     goTo(step + 1)
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setLoading(true)
+    setMensaje({ tipo: '', texto: '' })
+
     try {
-      await api.post('/envios', formData)
-      setMensaje({ tipo: 'success', texto: 'Envío registrado exitosamente.' })
+      const payload = {
+        remitente_nombre: formData.remitente_nombre,
+        remitente_telefono: formData.remitente_telefono,
+        remitente_direccion: formData.remitente_direccion,
+        destinatario_nombre: formData.destinatario_nombre,
+        destinatario_telefono: formData.destinatario_telefono,
+        destinatario_direccion: formData.destinatario_direccion,
+        origen: formData.origen,
+        destino: formData.destino,
+        peso: parseFloat(formData.peso),
+        tipo_servicio: formData.tipo_servicio,
+      }
+
+      const response = await api.post('/api/envios', payload)
+      
+      setMensaje({ 
+        tipo: 'success', 
+        texto: `✅ ¡Envío registrado! Número de guía: ${response.data.numero_guia}` 
+      })
+      
+      // Limpiar formulario después de 3 segundos y redirigir
+      setTimeout(() => {
+        navigate('/cliente/envios')
+      }, 3000)
+      
     } catch (error) {
+      console.error('Error al registrar envío:', error)
       setMensaje({
         tipo: 'error',
-        texto: 'Error de conexión con el servidor. El registro se guardó localmente (Simulado).',
+        texto: error.response?.data?.detail || '❌ Error de conexión con el servidor. Por favor intenta de nuevo.',
       })
-      console.error('Backend offline:', error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -185,7 +229,7 @@ const RegistroEnvioPage = () => {
       `}</style>
 
       <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '3rem 1rem' }}>
-        <div className="reg-page-card" style={{ width: '100%', maxWidth: '520px' }}>
+        <div className="reg-page-card" style={{ width: '100%', maxWidth: '580px' }}>
 
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.75rem' }}>
@@ -260,6 +304,7 @@ const RegistroEnvioPage = () => {
               {step === 1 && (
                 <>
                   <InputField label="Nombre del remitente" icon={Icon.user} name="remitente_nombre" value={formData.remitente_nombre} onChange={handleChange} placeholder="Nombre completo" required />
+                  <InputField label="Teléfono del remitente" icon={Icon.phone} name="remitente_telefono" value={formData.remitente_telefono} onChange={handleChange} placeholder="555-123-4567" />
                   <InputField label="Dirección de recolección" icon={Icon.mapPin} name="remitente_direccion" value={formData.remitente_direccion} onChange={handleChange} placeholder="Calle, Número, Colonia" required />
                 </>
               )}
@@ -267,14 +312,33 @@ const RegistroEnvioPage = () => {
               {step === 2 && (
                 <>
                   <InputField label="Nombre del destinatario" icon={Icon.user} name="destinatario_nombre" value={formData.destinatario_nombre} onChange={handleChange} placeholder="¿Quién recibe?" required />
+                  <InputField label="Teléfono del destinatario" icon={Icon.phone} name="destinatario_telefono" value={formData.destinatario_telefono} onChange={handleChange} placeholder="555-987-6543" />
                   <InputField label="Dirección de entrega" icon={Icon.mapPin} name="destinatario_direccion" value={formData.destinatario_direccion} onChange={handleChange} placeholder="Calle, Número, C.P." required />
                 </>
               )}
 
               {step === 3 && (
                 <>
-                  <InputField label="Descripción del contenido" textarea name="paquete_descripcion" value={formData.paquete_descripcion} onChange={handleChange} placeholder="Ej. Documentos, Ropa, Electrónicos" />
-                  <InputField label="Peso declarado (kg)" icon={Icon.package} name="paquete_peso" type="number" step="0.1" min="0" value={formData.paquete_peso} onChange={handleChange} required placeholder="Ej. 2.5" />
+                  <InputField label="Origen" icon={Icon.mapPin} name="origen" value={formData.origen} onChange={handleChange} placeholder="Ciudad de origen" required />
+                  <InputField label="Destino" icon={Icon.mapPin} name="destino" value={formData.destino} onChange={handleChange} placeholder="Ciudad de destino" required />
+                  <InputField label="Peso (kg)" icon={Icon.package} name="peso" type="number" step="0.1" min="0" value={formData.peso} onChange={handleChange} placeholder="Ej. 2.5" required />
+                  <select
+                    name="tipo_servicio"
+                    value={formData.tipo_servicio}
+                    onChange={handleChange}
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      border: `1px solid ${C.border}`,
+                      borderRadius: radius.md,
+                      fontSize: '14px',
+                      background: '#f9fafb',
+                      marginBottom: '1.1rem',
+                    }}
+                  >
+                    <option value="estandar">Estándar (3-5 días)</option>
+                    <option value="express">Express (1-2 días)</option>
+                  </select>
                 </>
               )}
 
@@ -301,9 +365,24 @@ const RegistroEnvioPage = () => {
                 ) : (
                   <button
                     type="submit"
-                    style={{ padding: '10px 24px', background: C.orange, color: C.white, border: 'none', borderRadius: radius.md, fontSize: '14px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', letterSpacing: '-0.01em' }}
+                    disabled={loading}
+                    style={{ 
+                      padding: '10px 24px', 
+                      background: C.orange, 
+                      color: C.white, 
+                      border: 'none', 
+                      borderRadius: radius.md, 
+                      fontSize: '14px', 
+                      fontWeight: '600', 
+                      cursor: loading ? 'not-allowed' : 'pointer', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '8px', 
+                      letterSpacing: '-0.01em',
+                      opacity: loading ? 0.7 : 1,
+                    }}
                   >
-                    <Icon.check /> Finalizar registro
+                    {loading ? 'Registrando...' : <><Icon.check /> Finalizar registro</>}
                   </button>
                 )}
               </div>

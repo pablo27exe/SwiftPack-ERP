@@ -15,10 +15,12 @@ export const EnvioProvider = ({ children }) => {
   const obtenerEnvios = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/envios');
+      const response = await api.get('/api/envios');  // ← Corregido: agregar /api
+      console.log('✅ Envíos obtenidos:', response.data);
       setEnvios(response.data);
       return response.data;
     } catch (err) {
+      console.error('❌ Error obtener envíos:', err);
       setError(err.response?.data?.detail || 'Error al obtener envíos');
       return [];
     } finally {
@@ -30,7 +32,7 @@ export const EnvioProvider = ({ children }) => {
   const obtenerEnvioPorGuia = async (guia) => {
     setLoading(true);
     try {
-      const response = await api.get(`/rastreo/${guia}`);
+      const response = await api.get(`/api/rastreo/${guia}`);  // ← Corregido: agregar /api
       setEnvioActual(response.data);
       return response.data;
     } catch (err) {
@@ -45,10 +47,12 @@ export const EnvioProvider = ({ children }) => {
   const registrarEnvio = async (datosEnvio) => {
     setLoading(true);
     try {
-      const response = await api.post('/envios', datosEnvio);
+      const response = await api.post('/api/envios', datosEnvio);  // ← Corregido: agregar /api
+      console.log('✅ Envío registrado:', response.data);
       setEnvios([response.data, ...envios]);
       return { success: true, data: response.data };
     } catch (err) {
+      console.error('❌ Error registrar envío:', err);
       setError(err.response?.data?.detail || 'Error al registrar envío');
       return { success: false, error: err.response?.data?.detail };
     } finally {
@@ -60,7 +64,7 @@ export const EnvioProvider = ({ children }) => {
   const actualizarEstado = async (id, estado) => {
     setLoading(true);
     try {
-      const response = await api.patch(`/envios/${id}/estado`, { estado });
+      const response = await api.patch(`/api/envios/${id}/estado`, { estado });  // ← Corregido: agregar /api
       setEnvios(envios.map(e => e.id === id ? response.data : e));
       return { success: true, data: response.data };
     } catch (err) {

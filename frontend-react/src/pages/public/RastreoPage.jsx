@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useParams } from 'react-router-dom';
 
 // ─── Design tokens ───────────────────────────────────────────────────────────
 const C = {
@@ -18,23 +19,6 @@ const C = {
 }
 
 const radius = { md: '10px', lg: '16px', pill: '99px' }
-
-// ─── Mock data ───────────────────────────────────────────────────────────────
-const createMockTracking = (guia) => {
-  if (!guia) return null
-  const now = new Date()
-  return {
-    guia,
-    estado: 'En tránsito',
-    ubicacionActual: 'Sucursal destino',
-    historial: [
-      { status: 'Preparado',          location: 'Centro de clasificación', time: new Date(now - 4 * 3600000).toLocaleString('es-MX'), responsable: 'Operador de bodega', done: true },
-      { status: 'En tránsito',        location: 'Ruta nacional',           time: new Date(now - 2 * 3600000).toLocaleString('es-MX'), responsable: 'Transportista',     done: true },
-      { status: 'Entrega en proceso', location: 'Sucursal destino',        time: now.toLocaleString('es-MX'),                         responsable: 'Repartidor',        done: false, active: true },
-      { status: 'Entregado',          location: '',                         time: '',                                                   responsable: '',                  done: false, pending: true },
-    ],
-  }
-}
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 const Icon = {
@@ -113,18 +97,35 @@ const StatusBadge = ({ estado }) => {
   )
 }
 
-// ─── Component ───────────────────────────────────────────────────────────────
+// ─── Mock data helper ────────────────────────────────────────────────────────
+const createMockTracking = (guia) => {
+  if (!guia) return null
+  const now = new Date()
+  return {
+    guia,
+    estado: 'En tránsito',
+    ubicacionActual: 'Sucursal destino',
+    historial: [
+      { status: 'Preparado',          location: 'Centro de clasificación', time: new Date(now - 4 * 3600000).toLocaleString('es-MX'), responsable: 'Operador de bodega', done: true },
+      { status: 'En tránsito',        location: 'Ruta nacional',           time: new Date(now - 2 * 3600000).toLocaleString('es-MX'), responsable: 'Transportista',     done: true },
+      { status: 'Entrega en proceso', location: 'Sucursal destino',        time: now.toLocaleString('es-MX'),                         responsable: 'Repartidor',        done: false, active: true },
+      { status: 'Entregado',          location: '',                         time: '',                                                   responsable: '',                  done: false, pending: true },
+    ],
+  }
+}
+
+// ─── Componente principal ────────────────────────────────────────────────────
 const RastreoPage = () => {
-  const [guia, setGuia]       = useState('')
+  const { guia: guiaUrl } = useParams();
+  const [guia, setGuia] = useState('')
   const [tracking, setTracking] = useState(null)
-  const [error, setError]     = useState('')
+  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [focused, setFocused] = useState(false)
   const [btnHover, setBtnHover] = useState(false)
 
-  const handleSubmit = (event) => {
-    event.preventDefault()
-    if (!guia.trim()) {
+  const buscarGuia = (numeroGuia) => {
+    if (!numeroGuia.trim()) {
       setError('Ingresa el número de guía para continuar.')
       setTracking(null)
       return
@@ -133,9 +134,23 @@ const RastreoPage = () => {
     setLoading(true)
     setTracking(null)
     setTimeout(() => {
-      setTracking(createMockTracking(guia.trim()))
+      setTracking(createMockTracking(numeroGuia.trim()))
       setLoading(false)
     }, 600)
+  }
+
+  useEffect(() => {
+    if (guiaUrl) {
+      setGuia(guiaUrl);
+      setTimeout(() => {
+        buscarGuia(guiaUrl);
+      }, 100);
+    }
+  }, [guiaUrl]);
+
+  const handleSubmit = (event) => {
+    event.preventDefault()
+    buscarGuia(guia)
   }
 
   return (
@@ -227,8 +242,6 @@ const RastreoPage = () => {
           {/* Results */}
           {tracking && (
             <div className="tracking-result" style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: radius.lg, padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05), 0 4px 24px rgba(17,81,156,0.06)' }}>
-
-              {/* Summary row */}
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
                   <p style={{ fontSize: '11px', fontWeight: '600', color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 4px' }}>Guía</p>
@@ -240,7 +253,6 @@ const RastreoPage = () => {
                 </div>
               </div>
 
-              {/* Location pill */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f0f7ff', border: `1px solid #bfdbfe`, borderRadius: radius.md, padding: '10px 14px', marginBottom: '2rem' }}>
                 <span style={{ color: C.blueMid, display: 'flex' }}><Icon.truck /></span>
                 <div>
@@ -249,18 +261,15 @@ const RastreoPage = () => {
                 </div>
               </div>
 
-              {/* Timeline */}
               <p style={{ fontSize: '12px', fontWeight: '600', color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 1.25rem' }}>Historial de eventos</p>
               <div style={{ position: 'relative' }}>
                 {tracking.historial.map((item, i) => {
                   const isLast = i === tracking.historial.length - 1
                   return (
                     <div key={i} style={{ display: 'flex', gap: '14px', position: 'relative' }}>
-                      {/* Line */}
                       {!isLast && (
                         <div style={{ position: 'absolute', left: '16px', top: '32px', bottom: 0, width: '1px', background: item.done ? C.blueMid : C.border, zIndex: 0 }} />
                       )}
-                      {/* Dot */}
                       <div style={{ flexShrink: 0, width: '32px', height: '32px', borderRadius: '50%', background: item.active ? C.orange : item.done ? C.blueMid : '#f1f5f9', border: `2px solid ${item.active ? C.orange : item.done ? C.blueMid : C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1, marginTop: '2px' }}>
                         {item.done
                           ? <Icon.check style={{ color: C.white }} />
@@ -269,7 +278,6 @@ const RastreoPage = () => {
                             : <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: C.border, display: 'block' }} />
                         }
                       </div>
-                      {/* Content */}
                       <div style={{ paddingBottom: isLast ? 0 : '1.5rem', flex: 1 }}>
                         <p style={{ fontSize: '14px', fontWeight: '600', color: item.pending ? '#9ca3af' : C.text, margin: '4px 0 6px' }}>{item.status}</p>
                         {!item.pending && (
@@ -299,10 +307,8 @@ const RastreoPage = () => {
                   )
                 })}
               </div>
-
             </div>
           )}
-
         </div>
       </div>
     </>

@@ -64,7 +64,7 @@ const MisEnvios = () => {
                 <tr key={envio.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 font-mono text-sm">{envio.numero_guia}</td>
                   <td className="px-6 py-4">{envio.origen} → {envio.destino}</td>
-                  <td className="px-6 py-4 text-sm">{new Date(envio.fecha).toLocaleDateString()}</td>
+                  <td className="px-6 py-4 text-sm">{new Date(envio.fecha_registro).toLocaleDateString()}</td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 rounded text-xs ${
                       envio.estado === 'entregado' ? 'bg-green-100 text-green-700' :
@@ -75,7 +75,7 @@ const MisEnvios = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <Link to={`/rastrear/${envio.numero_guia}`} className="text-blue-600 hover:underline">
+                    <Link to={`/rastrear/${envio.numero_guia}`} className="text-[#11519c] hover:text-[#ef5a07]">
                       Rastrear
                     </Link>
                   </td>
