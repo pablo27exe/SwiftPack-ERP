@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 
 const LoginPage = () => {
@@ -47,6 +47,12 @@ const LoginPage = () => {
       </form>
 
       {error && <div className="error-box">{error}</div>}
+
+      <div className="form-footer">
+        <p>
+          ¿No tienes cuenta? <Link to="/register">Regístrate aquí</Link>
+        </p>
+      </div>
     </section>
   )
 }

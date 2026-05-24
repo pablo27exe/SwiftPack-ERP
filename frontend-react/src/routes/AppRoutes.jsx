@@ -12,6 +12,7 @@ import CotizacionPage from '../pages/public/CotizacionPage'
 import RastreoPage from '../pages/public/RastreoPage'
 import RegistroEnvioPage from '../pages/public/RegistroEnvioPage'
 import LoginPage from '../pages/public/LoginPage'
+import RegisterPage from '../pages/public/RegisterPage'  // ← Importar RegisterPage
 
 // Páginas de Cliente (autenticadas)
 import DashboardCliente from '../pages/clientes/DashboardCliente'
@@ -41,6 +42,7 @@ function AppRoutes() {
       {/* ========== RUTAS DE AUTENTICACIÓN ========== */}
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
       </Route>
 
       {/* ========== RUTAS PROTEGIDAS - CLIENTES ========== */}
