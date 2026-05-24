@@ -240,6 +240,7 @@ const LoginPage = () => {
  
       <div style={styles.page}>
         <div style={styles.card} className="login-card">
+
  
           <div style={styles.logoRow}>
             <div style={styles.logoIcon}>{ICON_SVG.package}</div>
@@ -310,6 +311,25 @@ const LoginPage = () => {
             ¿No tienes cuenta?{' '}
             <Link to="/register" style={styles.footerLink}>
               Regístrate aquí
+            </Link>
+          
+          </div>
+            <div style={{ marginBottom: '1rem', textAlign: 'center' }}>
+            <Link 
+              to="/" 
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '13px',
+                color: '#6b7280',
+                textDecoration: 'none',
+                transition: 'color 0.2s',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.color = '#11519c'}
+              onMouseLeave={(e) => e.currentTarget.style.color = '#6b7280'}
+            >
+              Volver al inicio
             </Link>
           </div>
  
