@@ -10,6 +10,11 @@ from app.schemas import UserResponse, PerfilUpdate
 from app.auth import get_current_user
 from app.schemas import PerfilUpdate, TarifaCreate, TarifaUpdate, TarifaResponse, AsistenciaCreate, AsistenciaResponse
 
+from fastapi.responses import StreamingResponse
+import csv
+from io import StringIO
+from datetime import datetime
+
 router = APIRouter()
 
 # ========== Verificación de rol admin ==========
@@ -419,3 +424,180 @@ def listar_asistencias(
         query = query.filter(Asistencia.fecha_hora <= fecha_hasta)
     
     return query.order_by(Asistencia.fecha_hora.desc()).all()
+
+# ========== 6. Reportes ==========
+from fastapi.responses import StreamingResponse
+import csv
+from io import StringIO
+from datetime import datetime
+
+@router.get("/reportes/envios")
+def reporte_envios_csv(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    fecha_desde: Optional[datetime] = None,
+    fecha_hasta: Optional[datetime] = None,
+    estado: Optional[str] = None
+):
+    """Genera reporte de envíos en formato CSV"""
+    verificar_admin(current_user)
+    
+    # Construir consulta
+    query = db.query(Envio)
+    
+    if fecha_desde:
+        query = query.filter(Envio.fecha_registro >= fecha_desde)
+    if fecha_hasta:
+        query = query.filter(Envio.fecha_registro <= fecha_hasta)
+    if estado:
+        query = query.filter(Envio.estado == estado)
+    
+    envios = query.all()
+    
+    # Crear archivo CSV en memoria
+    output = StringIO()
+    writer = csv.writer(output)
+    
+    # Escribir encabezados
+    writer.writerow([
+        "ID", "Número de Guía", "Usuario ID", "Origen", "Destino",
+        "Peso (kg)", "Tipo Servicio", "Estado", "Costo", 
+        "Remitente", "Destinatario", "Fecha Registro", "Fecha Entrega"
+    ])
+    
+    # Escribir datos
+    for envio in envios:
+        writer.writerow([
+            envio.id,
+            envio.numero_guia,
+            envio.usuario_id or "N/A",
+            envio.origen,
+            envio.destino,
+            envio.peso,
+            envio.tipo_servicio,
+            envio.estado,
+            envio.costo,
+            envio.remitente_nombre,
+            envio.destinatario_nombre,
+            envio.fecha_registro.strftime("%Y-%m-%d %H:%M") if envio.fecha_registro else "",
+            envio.fecha_entrega.strftime("%Y-%m-%d %H:%M") if envio.fecha_entrega else ""
+        ])
+    
+    # Preparar respuesta
+    output.seek(0)
+    filename = f"reporte_envios_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+@router.get("/reportes/clientes")
+def reporte_clientes_csv(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Genera reporte de clientes en formato CSV"""
+    verificar_admin(current_user)
+    
+    clientes = db.query(Usuario).filter(Usuario.rol == "cliente").all()
+    
+    # Crear archivo CSV en memoria
+    output = StringIO()
+    writer = csv.writer(output)
+    
+    # Escribir encabezados
+    writer.writerow([
+        "ID", "Nombre", "Email", "Teléfono", "Dirección", 
+        "Activo", "Fecha Registro"
+    ])
+    
+    # Escribir datos
+    for cliente in clientes:
+        writer.writerow([
+            cliente.id,
+            cliente.nombre,
+            cliente.email,
+            cliente.telefono or "N/A",
+            cliente.direccion or "N/A",
+            "Sí" if cliente.activo else "No",
+            cliente.fecha_registro.strftime("%Y-%m-%d %H:%M") if cliente.fecha_registro else ""
+        ])
+    
+    output.seek(0)
+    filename = f"reporte_clientes_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+@router.get("/reportes/ingresos")
+def reporte_ingresos_csv(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    fecha_desde: Optional[datetime] = None,
+    fecha_hasta: Optional[datetime] = None
+):
+    """Genera reporte de ingresos en formato CSV"""
+    verificar_admin(current_user)
+    
+    query = db.query(Envio)
+    
+    if fecha_desde:
+        query = query.filter(Envio.fecha_registro >= fecha_desde)
+    if fecha_hasta:
+        query = query.filter(Envio.fecha_registro <= fecha_hasta)
+    
+    envios = query.all()
+    
+    # Calcular estadísticas
+    total_ingresos = sum(e.costo for e in envios)
+    total_envios = len(envios)
+    ingresos_por_tipo = {}
+    ingresos_por_dia = {}
+    
+    for envio in envios:
+        # Por tipo de servicio
+        tipo = envio.tipo_servicio
+        ingresos_por_tipo[tipo] = ingresos_por_tipo.get(tipo, 0) + envio.costo
+        
+        # Por día
+        dia = envio.fecha_registro.strftime("%Y-%m-%d")
+        ingresos_por_dia[dia] = ingresos_por_dia.get(dia, 0) + envio.costo
+    
+    # Crear archivo CSV en memoria
+    output = StringIO()
+    writer = csv.writer(output)
+    
+    # Resumen general
+    writer.writerow(["REPORTE DE INGRESOS"])
+    writer.writerow(["Fecha generación", datetime.now().strftime("%Y-%m-%d %H:%M:%S")])
+    writer.writerow(["Total de envíos", total_envios])
+    writer.writerow(["Total de ingresos", f"${total_ingresos:,.2f}"])
+    writer.writerow([])
+    
+    # Ingresos por tipo de servicio
+    writer.writerow(["INGRESOS POR TIPO DE SERVICIO"])
+    writer.writerow(["Tipo de Servicio", "Ingresos"])
+    for tipo, monto in ingresos_por_tipo.items():
+        writer.writerow([tipo, f"${monto:,.2f}"])
+    
+    writer.writerow([])
+    
+    # Ingresos por día
+    writer.writerow(["INGRESOS POR DÍA"])
+    writer.writerow(["Fecha", "Ingresos"])
+    for dia, monto in sorted(ingresos_por_dia.items()):
+        writer.writerow([dia, f"${monto:,.2f}"])
+    
+    output.seek(0)
+    filename = f"reporte_ingresos_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
