@@ -12,7 +12,7 @@ import CotizacionPage from '../pages/public/CotizacionPage'
 import RastreoPage from '../pages/public/RastreoPage'
 import RegistroEnvioPage from '../pages/public/RegistroEnvioPage'
 import LoginPage from '../pages/public/LoginPage'
-import RegisterPage from '../pages/public/RegisterPage'  // ← Importar RegisterPage
+import RegisterPage from '../pages/public/RegisterPage'
 
 // Páginas de Cliente (autenticadas)
 import DashboardCliente from '../pages/clientes/DashboardCliente'
@@ -31,18 +31,24 @@ import Reportes from '../pages/admin/Reportes'
 function AppRoutes() {
   return (
     <Routes>
-      {/* ========== RUTAS PÚBLICAS ========== */}
+      {/* ========== RUTAS PÚBLICAS (solo home, login, register) ========== */}
       <Route element={<PublicLayout />}>
         <Route path="/" element={<HomePage />} />
-        <Route path="/cotizar" element={<CotizacionPage />} />
-        <Route path="/rastrear/:guia?" element={<RastreoPage />} />
-        <Route path="/registro-envio" element={<RegistroEnvioPage />} />
       </Route>
 
       {/* ========== RUTAS DE AUTENTICACIÓN ========== */}
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+      </Route>
+
+      {/* ========== RUTAS PROTEGIDAS (requieren login) ========== */}
+      <Route element={<PrivateRoute allowedRoles={['cliente', 'admin', 'operador']} />}>
+        <Route element={<PublicLayout />}>
+          <Route path="/cotizar" element={<CotizacionPage />} />
+          <Route path="/rastrear/:guia?" element={<RastreoPage />} />
+          <Route path="/registro-envio" element={<RegistroEnvioPage />} />
+        </Route>
       </Route>
 
       {/* ========== RUTAS PROTEGIDAS - CLIENTES ========== */}
