@@ -4,9 +4,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Usuario
 from app.schemas import LoginRequest, LoginResponse, RegisterRequest, UserResponse
-from app.auth import verify_password, get_password_hash, create_access_token
 from app.auth import verify_password, get_password_hash, create_access_token, get_current_user
-
 router = APIRouter()
 
 @router.post("/login", response_model=LoginResponse)

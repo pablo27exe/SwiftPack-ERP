@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # Importar los routers
-from app.api import cotizacion, rastreo, envios, auth, clientes
+from app.api import cotizacion, rastreo, envios, auth, clientes, admin
 
 app = FastAPI(
     title="SwiftPack ERP API",
@@ -25,6 +25,7 @@ app.include_router(rastreo.router, prefix="/api/rastreo", tags=["Rastreo"])
 app.include_router(envios.router, prefix="/api/envios", tags=["Envíos"])
 app.include_router(auth.router, prefix="/api/auth", tags=["Autenticación"])
 app.include_router(clientes.router, prefix="/api/clientes", tags=["Clientes"])
+app.include_router(admin.router, prefix="/api/admin", tags=["Administración"])
 
 @app.get("/")
 def root():
