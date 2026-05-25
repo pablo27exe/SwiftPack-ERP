@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
+import Alert from '../../components/common/Alert'
 
 // ─── Design tokens ───────────────────────────────────────────────────────────
 const C = {
@@ -27,7 +29,6 @@ const C = {
 }
 
 const radius = { sm: '8px', md: '10px', lg: '16px', pill: '99px' }
-
 const shadow = '0 1px 3px rgba(0,0,0,0.05), 0 4px 24px rgba(17,81,156,0.07)'
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
@@ -104,67 +105,19 @@ const Icon = {
 
 // ─── KPI card config ─────────────────────────────────────────────────────────
 const getStats = (kpis) => [
-  {
-    title: 'Total envíos',
-    value: kpis?.total_envios ?? 0,
-    IconComp: Icon.package,
-    iconBg: C.blue,
-    iconColor: C.white,
-    accent: C.blue,
-    tint: C.blueTint,
-  },
-  {
-    title: 'En tránsito',
-    value: kpis?.envios_transito ?? 0,
-    IconComp: Icon.truck,
-    iconBg: C.yellow,
-    iconColor: C.white,
-    accent: C.yellow,
-    tint: C.yellowTint,
-  },
-  {
-    title: 'Entregados',
-    value: kpis?.envios_entregados ?? 0,
-    IconComp: Icon.checkCircle,
-    iconBg: C.green,
-    iconColor: C.white,
-    accent: C.green,
-    tint: C.greenTint,
-  },
-  {
-    title: 'Clientes activos',
-    value: kpis?.total_clientes ?? 0,
-    IconComp: Icon.users,
-    iconBg: C.purple,
-    iconColor: C.white,
-    accent: C.purple,
-    tint: C.purpleTint,
-  },
-  {
-    title: 'Ingresos hoy',
-    value: new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(kpis?.ingresos_hoy ?? 0),
-    IconComp: Icon.dollarSign,
-    iconBg: C.orange,
-    iconColor: C.white,
-    accent: C.orange,
-    tint: C.orangeTint,
-  },
-  {
-    title: 'Repartidores activos',
-    value: kpis?.repartidores_activos ?? 0,
-    IconComp: Icon.bike,
-    iconBg: C.blueMid,
-    iconColor: C.white,
-    accent: C.blueMid,
-    tint: C.blueTint,
-  },
+  { title: 'Total envíos', value: kpis?.total_envios ?? 0, IconComp: Icon.package, iconBg: C.blue, accent: C.blue, tint: C.blueTint },
+  { title: 'En tránsito', value: kpis?.envios_transito ?? 0, IconComp: Icon.truck, iconBg: C.yellow, accent: C.yellow, tint: C.yellowTint },
+  { title: 'Entregados', value: kpis?.envios_entregados ?? 0, IconComp: Icon.checkCircle, iconBg: C.green, accent: C.green, tint: C.greenTint },
+  { title: 'Clientes activos', value: kpis?.total_clientes ?? 0, IconComp: Icon.users, iconBg: C.purple, accent: C.purple, tint: C.purpleTint },
+  { title: 'Ingresos hoy', value: new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(kpis?.ingresos_hoy ?? 0), IconComp: Icon.dollarSign, iconBg: C.orange, accent: C.orange, tint: C.orangeTint },
+  { title: 'Repartidores activos', value: kpis?.repartidores_activos ?? 0, IconComp: Icon.bike, iconBg: C.blueMid, accent: C.blueMid, tint: C.blueTint },
 ]
 
 const QUICK_ACTIONS = [
-  { label: 'Ver todos los envíos',  IconComp: Icon.package,    accent: C.blue   },
-  { label: 'Gestionar clientes',    IconComp: Icon.users,      accent: C.purple },
-  { label: 'Configurar tarifas',    IconComp: Icon.settings,   accent: C.orange },
-  { label: 'Gestionar usuarios',    IconComp: Icon.user,       accent: C.green  },
+  { label: 'Ver todos los envíos',  IconComp: Icon.package,    accent: C.blue,   path: '/admin/envios' },
+  { label: 'Gestionar clientes',    IconComp: Icon.users,      accent: C.purple, path: '/admin/clientes' },
+  { label: 'Configurar tarifas',    IconComp: Icon.settings,   accent: C.orange, path: '/admin/tarifas' },
+  { label: 'Gestionar usuarios',    IconComp: Icon.user,       accent: C.green,  path: '/admin/rh' },
 ]
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
@@ -206,10 +159,20 @@ const KpiCard = ({ title, value, IconComp, iconBg, accent, tint, idx }) => {
   )
 }
 
-const QuickAction = ({ label, IconComp, accent }) => {
+// QuickAction con navegación
+const QuickAction = ({ label, IconComp, accent, path }) => {
   const [hover, setHover] = useState(false)
+  const navigate = useNavigate()
+
+  const handleClick = () => {
+    if (path) {
+      navigate(path)
+    }
+  }
+
   return (
     <button
+      onClick={handleClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
@@ -252,17 +215,24 @@ const EstadoBadge = ({ estado }) => {
 
 // ─── Main component ──────────────────────────────────────────────────────────
 const AdminDashboard = () => {
-  const [kpis, setKpis]       = useState(null)
+  const [kpis, setKpis] = useState(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [alert, setAlert] = useState(null)
+
+  const mostrarAlerta = (type, message) => {
+    setAlert({ type, message })
+    setTimeout(() => setAlert(null), 3000)
+  }
 
   const cargarKPIs = async (showRefresh = false) => {
     if (showRefresh) setRefreshing(true)
     try {
-      const response = await api.get('/admin/kpis')
+      const response = await api.get('/api/admin/kpis')
       setKpis(response.data)
     } catch (error) {
       console.error('Error cargando KPIs:', error)
+      mostrarAlerta('error', 'Error al cargar los indicadores')
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -286,6 +256,9 @@ const AdminDashboard = () => {
       `}</style>
 
       <div style={{ minHeight: '100vh', background: C.bg, padding: '2rem 2rem 3rem' }}>
+
+        {/* Alert */}
+        {alert && <Alert type={alert.type} message={alert.message} />}
 
         {/* Top bar */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '12px' }}>

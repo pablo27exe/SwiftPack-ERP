@@ -15,13 +15,21 @@ const GestionClientes = () => {
     cargarClientes();
   }, []);
 
+  // Función para mostrar alert con auto-cierre
+  const mostrarAlerta = (type, message) => {
+    setAlert({ type, message });
+    setTimeout(() => {
+      setAlert(null);
+    }, 3000);
+  };
+
   const cargarClientes = async () => {
     try {
-      const response = await api.get('/api/admin/clientes');  // ← Corregido
+      const response = await api.get('/api/admin/clientes');
       setClientes(response.data);
     } catch (error) {
       console.error('Error:', error);
-      setAlert({ type: 'error', message: 'Error al cargar clientes' });
+      mostrarAlerta('error', 'Error al cargar clientes');
     } finally {
       setLoading(false);
     }
@@ -35,11 +43,11 @@ const GestionClientes = () => {
     e.preventDefault();
     try {
       if (editando) {
-        await api.put(`/api/admin/clientes/${editando}`, formData);  // ← Corregido
-        setAlert({ type: 'success', message: 'Cliente actualizado' });
+        await api.put(`/api/admin/clientes/${editando}`, formData);
+        mostrarAlerta('success', 'Cliente actualizado');
       } else {
-        await api.post('/api/admin/clientes', formData);  // ← Corregido
-        setAlert({ type: 'success', message: 'Cliente creado' });
+        await api.post('/api/admin/clientes', formData);
+        mostrarAlerta('success', 'Cliente creado');
       }
       setMostrarForm(false);
       setEditando(null);
@@ -47,19 +55,19 @@ const GestionClientes = () => {
       cargarClientes();
     } catch (error) {
       console.error('Error:', error);
-      setAlert({ type: 'error', message: 'Error al guardar' });
+      mostrarAlerta('error', 'Error al guardar');
     }
   };
 
   const eliminarCliente = async (id) => {
     if (!confirm('¿Eliminar este cliente?')) return;
     try {
-      await api.delete(`/api/admin/clientes/${id}`);  // ← Corregido
-      setAlert({ type: 'success', message: 'Cliente eliminado' });
+      await api.delete(`/api/admin/clientes/${id}`);
+      mostrarAlerta('success', 'Cliente eliminado');
       cargarClientes();
     } catch (error) {
       console.error('Error:', error);
-      setAlert({ type: 'error', message: 'Error al eliminar' });
+      mostrarAlerta('error', 'Error al eliminar');
     }
   };
 
@@ -77,7 +85,7 @@ const GestionClientes = () => {
         </button>
       </div>
 
-      {alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}
+      {alert && <Alert type={alert.type} message={alert.message} />}
 
       {mostrarForm && (
         <div className="bg-white rounded-lg shadow p-6 mb-6">
@@ -135,7 +143,7 @@ const GestionClientes = () => {
           <tbody className="divide-y divide-gray-200">
             {clientes.length === 0 ? (
               <tr>
-                <td colSpan="5" className="px-6 py-4 text-center text-gray-500">
+                <td colSpan="4" className="px-6 py-4 text-center text-gray-500">
                   No hay clientes registrados
                 </td>
               </tr>

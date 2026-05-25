@@ -8,18 +8,30 @@ const GestionTarifas = () => {
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState(null);
   const [editando, setEditando] = useState(null);
-  const [formData, setFormData] = useState({ tipo_servicio: 'estandar', origen_zona: '', destino_zona: '', costo_base: 0, costo_por_kg: 0 });
+  const [formData, setFormData] = useState({ 
+    tipo_servicio: 'estandar', 
+    origen_zona: '', 
+    destino_zona: '', 
+    costo_base: 0, 
+    costo_por_kg: 0 
+  });
 
   useEffect(() => {
     cargarTarifas();
   }, []);
 
+  // Función para mostrar alert con auto-cierre
+  const mostrarAlerta = (type, message) => {
+    setAlert({ type, message });
+    setTimeout(() => setAlert(null), 3000);
+  };
+
   const cargarTarifas = async () => {
     try {
-      const response = await api.get('/admin/tarifas');
+      const response = await api.get('/api/admin/tarifas');  // ← Corregido: agregar /api
       setTarifas(response.data);
     } catch (error) {
-      setAlert({ type: 'error', message: 'Error al cargar tarifas' });
+      mostrarAlerta('error', 'Error al cargar tarifas');
     } finally {
       setLoading(false);
     }
@@ -34,28 +46,35 @@ const GestionTarifas = () => {
     e.preventDefault();
     try {
       if (editando) {
-        await api.put(`/admin/tarifas/${editando}`, formData);
-        setAlert({ type: 'success', message: 'Tarifa actualizada' });
+        await api.put(`/api/admin/tarifas/${editando}`, formData);  // ← Corregido
+        mostrarAlerta('success', 'Tarifa actualizada');
       } else {
-        await api.post('/admin/tarifas', formData);
-        setAlert({ type: 'success', message: 'Tarifa creada' });
+        await api.post('/api/admin/tarifas', formData);  // ← Corregido
+        mostrarAlerta('success', 'Tarifa creada');
       }
       setEditando(null);
-      setFormData({ tipo_servicio: 'estandar', origen_zona: '', destino_zona: '', costo_base: 0, costo_por_kg: 0 });
+      setFormData({ 
+        tipo_servicio: 'estandar', 
+        origen_zona: '', 
+        destino_zona: '', 
+        costo_base: 0, 
+        costo_por_kg: 0 
+      });
       cargarTarifas();
     } catch (error) {
-      setAlert({ type: 'error', message: 'Error al guardar' });
+      console.error('Error:', error);
+      mostrarAlerta('error', 'Error al guardar');
     }
   };
 
   const eliminarTarifa = async (id) => {
     if (!confirm('¿Eliminar esta tarifa?')) return;
     try {
-      await api.delete(`/admin/tarifas/${id}`);
-      setAlert({ type: 'success', message: 'Tarifa eliminada' });
+      await api.delete(`/api/admin/tarifas/${id}`);  // ← Corregido
+      mostrarAlerta('success', 'Tarifa eliminada');
       cargarTarifas();
     } catch (error) {
-      setAlert({ type: 'error', message: 'Error al eliminar' });
+      mostrarAlerta('error', 'Error al eliminar');
     }
   };
 
@@ -64,38 +83,73 @@ const GestionTarifas = () => {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Configuración de tarifas</h1>
-        <button onClick={() => { setEditando(null); setFormData({ tipo_servicio: 'estandar', origen_zona: '', destino_zona: '', costo_base: 0, costo_por_kg: 0 }); }} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+        <h1 className="text-2xl font-bold text-[#11519c]">Configuración de tarifas</h1>
+        <button 
+          onClick={() => { setEditando(null); setFormData({ tipo_servicio: 'estandar', origen_zona: '', destino_zona: '', costo_base: 0, costo_por_kg: 0 }); }} 
+          className="bg-[#11519c] text-white px-4 py-2 rounded hover:bg-[#2e89c6] transition"
+        >
           + Nueva tarifa
         </button>
       </div>
 
-      {alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}
+      {alert && <Alert type={alert.type} message={alert.message} />}
 
-      {/* Formulario */}
+      {/* Formulario - se muestra cuando se hace clic en nuevo o editar */}
       {(editando !== null || document.activeElement?.type !== 'button') && (
         <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">{editando ? 'Editar' : 'Nueva'} tarifa</h2>
+          <h2 className="text-xl font-semibold mb-4 text-[#11519c]">{editando ? 'Editar' : 'Nueva'} tarifa</h2>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <select name="tipo_servicio" value={formData.tipo_servicio} onChange={handleChange} className="px-3 py-2 border rounded">
+            <select 
+              name="tipo_servicio" 
+              value={formData.tipo_servicio} 
+              onChange={handleChange} 
+              className="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-[#11519c]"
+            >
               <option value="estandar">Estándar</option>
               <option value="express">Express</option>
               <option value="programado">Programado</option>
             </select>
-            <input type="text" name="origen_zona" placeholder="Zona origen" value={formData.origen_zona} onChange={handleChange} className="px-3 py-2 border rounded" required />
-            <input type="text" name="destino_zona" placeholder="Zona destino" value={formData.destino_zona} onChange={handleChange} className="px-3 py-2 border rounded" required />
-            <input type="number" name="costo_base" placeholder="Costo base" value={formData.costo_base} onChange={handleChange} className="px-3 py-2 border rounded" required />
-            <input type="number" name="costo_por_kg" placeholder="Costo por kg" value={formData.costo_por_kg} onChange={handleChange} className="px-3 py-2 border rounded" required />
+            <input 
+              type="text" name="origen_zona" placeholder="Zona origen" 
+              value={formData.origen_zona} onChange={handleChange} 
+              className="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-[#11519c]" 
+              required 
+            />
+            <input 
+              type="text" name="destino_zona" placeholder="Zona destino" 
+              value={formData.destino_zona} onChange={handleChange} 
+              className="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-[#11519c]" 
+              required 
+            />
+            <input 
+              type="number" name="costo_base" placeholder="Costo base" 
+              value={formData.costo_base} onChange={handleChange} 
+              className="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-[#11519c]" 
+              required 
+            />
+            <input 
+              type="number" name="costo_por_kg" placeholder="Costo por kg" 
+              value={formData.costo_por_kg} onChange={handleChange} 
+              className="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-[#11519c]" 
+              required 
+            />
             <div className="flex space-x-2 md:col-span-2">
-              <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Guardar</button>
-              <button type="button" onClick={() => setEditando(null)} className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Cancelar</button>
+              <button type="submit" className="bg-[#ef5a07] text-white px-4 py-2 rounded hover:bg-[#fd8106] transition">
+                Guardar
+              </button>
+              <button 
+                type="button" onClick={() => setEditando(null)} 
+                className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 transition"
+              >
+                Cancelar
+              </button>
             </div>
           </form>
         </div>
       )}
 
       {/* Tabla */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white rounded-lg shadow overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -108,19 +162,37 @@ const GestionTarifas = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {tarifas.map((tarifa) => (
-              <tr key={tarifa.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 capitalize">{tarifa.tipo_servicio}</td>
-                <td className="px-6 py-4">{tarifa.origen_zona}</td>
-                <td className="px-6 py-4">{tarifa.destino_zona}</td>
-                <td className="px-6 py-4">${tarifa.costo_base}</td>
-                <td className="px-6 py-4">${tarifa.costo_por_kg}</td>
-                <td className="px-6 py-4 space-x-2">
-                  <button onClick={() => { setEditando(tarifa.id); setFormData(tarifa); }} className="text-blue-600 hover:underline">Editar</button>
-                  <button onClick={() => eliminarTarifa(tarifa.id)} className="text-red-600 hover:underline">Eliminar</button>
+            {tarifas.length === 0 ? (
+              <tr>
+                <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
+                  No hay tarifas registradas
                 </td>
               </tr>
-            ))}
+            ) : (
+              tarifas.map((tarifa) => (
+                <tr key={tarifa.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 capitalize">{tarifa.tipo_servicio}</td>
+                  <td className="px-6 py-4">{tarifa.origen_zona}</td>
+                  <td className="px-6 py-4">{tarifa.destino_zona}</td>
+                  <td className="px-6 py-4">${tarifa.costo_base}</td>
+                  <td className="px-6 py-4">${tarifa.costo_por_kg}</td>
+                  <td className="px-6 py-4 space-x-2">
+                    <button 
+                      onClick={() => { setEditando(tarifa.id); setFormData(tarifa); }} 
+                      className="text-[#11519c] hover:text-[#ef5a07] transition"
+                    >
+                      Editar
+                    </button>
+                    <button 
+                      onClick={() => eliminarTarifa(tarifa.id)} 
+                      className="text-red-600 hover:text-red-800 transition"
+                    >
+                      Eliminar
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
