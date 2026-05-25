@@ -1,4 +1,3 @@
-# app/api/admin.py
 from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -6,16 +5,101 @@ from datetime import datetime, timedelta
 
 from app.database import get_db
 from app.models import Usuario, Envio, Direccion, Tarifa, Empleado, Asistencia
-from app.schemas import UserResponse, PerfilUpdate
+from app.schemas import UserResponse, PerfilUpdate, EstadoUpdate
 from app.auth import get_current_user
 from app.schemas import PerfilUpdate, TarifaCreate, TarifaUpdate, TarifaResponse, AsistenciaCreate, AsistenciaResponse
 
 from fastapi.responses import StreamingResponse
 import csv
 from io import StringIO
-from datetime import datetime
 
 router = APIRouter()
+
+# ========== Verificación de rol admin ==========
+def verificar_admin(current_user: dict):
+    if current_user.get("rol") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Se requieren permisos de administrador"
+        )
+    return True
+
+# ========== 1. KPIs / Dashboard ==========
+@router.get("/kpis")
+def obtener_kpis(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    verificar_admin(current_user)
+    
+    total_clientes = db.query(Usuario).filter(Usuario.rol == "cliente").count()
+    total_envios = db.query(Envio).count()
+    envios_pendientes = db.query(Envio).filter(Envio.estado == "pendiente").count()
+    envios_transito = db.query(Envio).filter(Envio.estado == "en_transito").count()
+    envios_entregados = db.query(Envio).filter(Envio.estado == "entregado").count()
+    ingresos_hoy = total_envios * 150
+    
+    return {
+        "total_clientes": total_clientes,
+        "total_envios": total_envios,
+        "envios_pendientes": envios_pendientes,
+        "envios_transito": envios_transito,
+        "envios_entregados": envios_entregados,
+        "ingresos_hoy": ingresos_hoy,
+        "repartidores_activos": 5,
+        "ultimos_envios": []
+    }
+
+# ========== 2. Gestión de Envíos ==========
+@router.get("/envios")
+def listar_envios_admin(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 100
+):
+    verificar_admin(current_user)
+    envios = db.query(Envio).offset(skip).limit(limit).all()
+    return envios
+
+@router.patch("/envios/{envio_id}/estado")
+def actualizar_estado_envio_admin(
+    envio_id: int,
+    estado_data: EstadoUpdate,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    verificar_admin(current_user)
+    
+    envio = db.query(Envio).filter(Envio.id == envio_id).first()
+    if not envio:
+        raise HTTPException(status_code=404, detail="Envío no encontrado")
+    
+    envio.estado = estado_data.estado
+    if estado_data.estado == "entregado":
+        envio.fecha_entrega = datetime.now()
+    
+    db.commit()
+    db.refresh(envio)
+    
+    return {"message": "Estado actualizado", "estado": envio.estado}
+
+@router.delete("/envios/{envio_id}")
+def eliminar_envio_admin(
+    envio_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    verificar_admin(current_user)
+    
+    envio = db.query(Envio).filter(Envio.id == envio_id).first()
+    if not envio:
+        raise HTTPException(status_code=404, detail="Envío no encontrado")
+    
+    db.delete(envio)
+    db.commit()
+    
+    return {"message": "Envío eliminado correctamente"}
 
 # ========== Verificación de rol admin ==========
 def verificar_admin(current_user: dict):
@@ -283,6 +367,8 @@ def toggle_tarifa(
     db.refresh(tarifa)
     
     return {"id": tarifa.id, "activo": tarifa.activo}
+
+
 
 # ========== 5. Gestión de Empleados y Asistencia ==========
 from app.models import Empleado, Asistencia

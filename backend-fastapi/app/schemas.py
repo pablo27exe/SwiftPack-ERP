@@ -167,3 +167,6 @@ class AsistenciaResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        
+class EstadoUpdate(BaseModel):
+    estado: str
