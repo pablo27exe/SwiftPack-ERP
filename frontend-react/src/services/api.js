@@ -1,13 +1,26 @@
 import axios from 'axios'
 
+// Función para obtener la URL base automáticamente
+const getBaseURL = () => {
+  // Si estamos en localhost (misma PC)
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:8000';
+  }
+  
+  // Si estamos en la red local (móvil u otra PC)
+  // Usar la misma IP del frontend pero cambiando el puerto a 8000
+  const hostname = window.location.hostname;
+  return `http://${hostname}:8000`;
+};
+
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://192.168.0.124:8000',
+    baseURL: import.meta.env.VITE_API_URL || getBaseURL(),
     headers: {
-        'Content-Type' : 'application/json',
+        'Content-Type': 'application/json',
     },
 })
 
-//Interceptor para agregar token
+// Interceptor para agregar token
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('access_token')
@@ -19,7 +32,7 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 )
 
-//Interceptor para manejar errores de autenticación
+// Interceptor para manejar errores de autenticación
 api.interceptors.response.use(
     (response) => response,
     (error) => {

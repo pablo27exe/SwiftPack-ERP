@@ -194,7 +194,7 @@ const RegistroEnvioPage = () => {
         tipo_servicio: formData.tipo_servicio,
       }
 
-      const response = await api.post('/api/envios', payload)
+      const response = await api.post('/api/envios/', payload)
       
       setMensaje({ 
         tipo: 'success', 
