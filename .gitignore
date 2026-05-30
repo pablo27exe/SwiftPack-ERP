@@ -4,3 +4,9 @@ __pycache__/
 .env 
 dist/ 
 .vscode/ 
+echo node_modules/ > .gitignore
+echo .expo/ >> .gitignore
+echo .env >> .gitignore
+echo dist/ >> .gitignore
+echo *.log >> .gitignore
+echo .DS_Store >> .gitignore
