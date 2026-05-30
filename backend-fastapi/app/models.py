@@ -37,6 +37,7 @@ class Envio(Base):
     id = Column(Integer, primary_key=True, index=True)
     numero_guia = Column(String, unique=True, index=True, nullable=False)
     usuario_id = Column(Integer, nullable=True, index=True)  # Puede ser null si no está registrado
+    repartidor_id = Column(Integer, nullable=True, index=True) 
     origen = Column(String, nullable=False)
     destino = Column(String, nullable=False)
     peso = Column(Float, nullable=False)
@@ -87,3 +88,4 @@ class Asistencia(Base):
     tipo = Column(String, nullable=False)  # entrada, salida
     fecha_hora = Column(DateTime(timezone=True), server_default=func.now())
     ubicacion = Column(String, nullable=True)  # GPS o sucursal
+    

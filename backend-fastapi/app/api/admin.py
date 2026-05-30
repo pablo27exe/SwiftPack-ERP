@@ -687,3 +687,51 @@ def reporte_ingresos_csv(
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+    
+# ========== 7. Gestión de Repartidores ==========
+@router.get("/repartidores")
+def listar_repartidores(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Lista todos los empleados con rol operador (repartidores)"""
+    verificar_admin(current_user)
+    
+    repartidores = db.query(Usuario).filter(
+        Usuario.rol == "operador",
+        Usuario.activo == True
+    ).all()
+    
+    return [
+        {
+            "id": r.id,
+            "nombre": r.nombre,
+            "email": r.email,
+            "telefono": r.telefono
+        }
+        for r in repartidores
+    ]
+
+@router.patch("/envios/{envio_id}/asignar")
+def asignar_repartidor(
+    envio_id: int,
+    repartidor_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Asigna un repartidor a un envío"""
+    verificar_admin(current_user)
+    
+    envio = db.query(Envio).filter(Envio.id == envio_id).first()
+    if not envio:
+        raise HTTPException(status_code=404, detail="Envío no encontrado")
+    
+    repartidor = db.query(Usuario).filter(Usuario.id == repartidor_id).first()
+    if not repartidor:
+        raise HTTPException(status_code=404, detail="Repartidor no encontrado")
+    
+    envio.repartidor_id = repartidor_id
+    db.commit()
+    db.refresh(envio)
+    
+    return {"message": f"Envío asignado a {repartidor.nombre}", "repartidor": repartidor.nombre}

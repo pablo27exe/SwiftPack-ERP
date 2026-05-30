@@ -15,7 +15,8 @@ const GestionRH = () => {
     puesto: '', 
     telefono: '', 
     fecha_contratacion: '', 
-    salario: 0 
+    salario: 0,
+    rol: 'operador'  // ← NUEVO: por defecto repartidor
   });
 
   useEffect(() => {
@@ -30,7 +31,7 @@ const GestionRH = () => {
 
   const cargarEmpleados = async () => {
     try {
-      const response = await api.get('/api/admin/empleados');  // ← Corregido
+      const response = await api.get('/api/admin/empleados');
       setEmpleados(response.data);
     } catch (error) {
       mostrarAlerta('error', 'Error al cargar empleados');
@@ -48,15 +49,23 @@ const GestionRH = () => {
     e.preventDefault();
     try {
       if (editando) {
-        await api.put(`/api/admin/empleados/${editando}`, formData);  // ← Corregido
+        await api.put(`/api/admin/empleados/${editando}`, formData);
         mostrarAlerta('success', 'Empleado actualizado');
       } else {
-        await api.post('/api/admin/empleados', formData);  // ← Corregido
+        await api.post('/api/admin/empleados', formData);
         mostrarAlerta('success', 'Empleado registrado');
       }
       setMostrarForm(false);
       setEditando(null);
-      setFormData({ nombre: '', email: '', puesto: '', telefono: '', fecha_contratacion: '', salario: 0 });
+      setFormData({ 
+        nombre: '', 
+        email: '', 
+        puesto: '', 
+        telefono: '', 
+        fecha_contratacion: '', 
+        salario: 0,
+        rol: 'operador'
+      });
       cargarEmpleados();
     } catch (error) {
       mostrarAlerta('error', 'Error al guardar');
@@ -66,7 +75,7 @@ const GestionRH = () => {
   const eliminarEmpleado = async (id) => {
     if (!confirm('¿Eliminar este empleado?')) return;
     try {
-      await api.delete(`/api/admin/empleados/${id}`);  // ← Corregido
+      await api.delete(`/api/admin/empleados/${id}`);
       mostrarAlerta('success', 'Empleado eliminado');
       cargarEmpleados();
     } catch (error) {
@@ -83,6 +92,26 @@ const GestionRH = () => {
     }
   };
 
+  // Obtener el rol en texto
+  const obtenerRolTexto = (rol) => {
+    switch (rol) {
+      case 'admin': return 'Administrador';
+      case 'operador': return 'Repartidor';
+      case 'cliente': return 'Cliente';
+      default: return rol;
+    }
+  };
+
+  // Obtener color del badge según rol
+  const obtenerColorRol = (rol) => {
+    switch (rol) {
+      case 'admin': return 'bg-purple-100 text-purple-700';
+      case 'operador': return 'bg-orange-100 text-[#ef5a07]';
+      case 'cliente': return 'bg-blue-100 text-[#11519c]';
+      default: return 'bg-gray-100 text-gray-700';
+    }
+  };
+
   if (loading) return <LoadingSpinner />;
 
   return (
@@ -90,7 +119,9 @@ const GestionRH = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-[#11519c]">Gestión de Recursos Humanos</h1>
         <button 
-          onClick={() => { setMostrarForm(true); setEditando(null); setFormData({ nombre: '', email: '', puesto: '', telefono: '', fecha_contratacion: '', salario: 0 }); }} 
+          onClick={() => { setMostrarForm(true); setEditando(null); setFormData({ 
+            nombre: '', email: '', puesto: '', telefono: '', fecha_contratacion: '', salario: 0, rol: 'operador'
+          }); }} 
           className="bg-[#11519c] text-white px-4 py-2 rounded hover:bg-[#2e89c6] transition"
         >
           + Nuevo empleado
@@ -136,6 +167,24 @@ const GestionRH = () => {
               value={formData.salario} onChange={handleChange} 
               className="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-[#11519c]" 
             />
+            
+            {/* ← NUEVO: Selector de rol */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de empleado</label>
+              <select
+                name="rol"
+                value={formData.rol}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-[#11519c]"
+              >
+                <option value="operador">Repartidor</option>
+                <option value="admin">Administrador</option>
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                Los repartidores (operadores) podrán acceder a la app móvil.
+              </p>
+            </div>
+
             <div className="flex space-x-2 md:col-span-2">
               <button type="submit" className="bg-[#ef5a07] text-white px-4 py-2 rounded hover:bg-[#fd8106] transition">
                 Guardar
@@ -158,6 +207,7 @@ const GestionRH = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Puesto</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rol</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Asistencia</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
             </tr>
@@ -165,7 +215,7 @@ const GestionRH = () => {
           <tbody className="divide-y divide-gray-200">
             {empleados.length === 0 ? (
               <tr>
-                <td colSpan="5" className="px-6 py-4 text-center text-gray-500">
+                <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
                   No hay empleados registrados
                 </td>
               </tr>
@@ -175,6 +225,11 @@ const GestionRH = () => {
                   <td className="px-6 py-4">{emp.nombre}</td>
                   <td className="px-6 py-4">{emp.puesto}</td>
                   <td className="px-6 py-4">{emp.email}</td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-1 rounded text-xs ${obtenerColorRol(emp.rol)}`}>
+                      {obtenerRolTexto(emp.rol)}
+                    </span>
+                  </td>
                   <td className="px-6 py-4">
                     <div className="flex space-x-1">
                       <button 
@@ -193,7 +248,7 @@ const GestionRH = () => {
                   </td>
                   <td className="px-6 py-4 space-x-2">
                     <button 
-                      onClick={() => { setEditando(emp.id); setFormData(emp); setMostrarForm(true); }} 
+                      onClick={() => { setEditando(emp.id); setFormData({ ...emp, rol: emp.rol || 'operador' }); setMostrarForm(true); }} 
                       className="text-[#11519c] hover:text-[#ef5a07] transition"
                     >
                       Editar

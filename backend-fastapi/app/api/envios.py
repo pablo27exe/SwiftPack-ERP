@@ -9,8 +9,40 @@ from app.database import get_db
 from app.models import Envio, Usuario
 from app.schemas import EnvioCreate, EnvioUpdate, EnvioResponse
 from app.auth import get_current_user
+from pydantic import BaseModel
 
 router = APIRouter()
+
+# Agregar este modelo al inicio del archivo
+class EstadoUpdate(BaseModel):
+    estado: str
+
+# Modificar el endpoint
+@router.patch("/{envio_id}/estado")
+def actualizar_estado(
+    envio_id: int,
+    estado_data: EstadoUpdate,  # ← Cambiar a body
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Actualiza el estado de un envío (solo admin/operador)"""
+    
+    # Verificar que sea admin o operador
+    if current_user.get("rol") not in ["admin", "operador"]:
+        raise HTTPException(status_code=403, detail="No autorizado")
+    
+    envio = db.query(Envio).filter(Envio.id == envio_id).first()
+    if not envio:
+        raise HTTPException(status_code=404, detail="Envío no encontrado")
+    
+    envio.estado = estado_data.estado  # ← Acceder al body
+    if estado_data.estado == "entregado":
+        envio.fecha_entrega = datetime.now()
+    
+    db.commit()
+    db.refresh(envio)
+    
+    return {"message": "Estado actualizado", "estado": envio.estado}
 
 def generar_numero_guia():
     """Genera un número de guía único"""
@@ -127,3 +159,21 @@ def actualizar_estado(
     db.refresh(envio)
     
     return {"message": "Estado actualizado", "estado": envio.estado}
+
+@router.get("/repartidor/envios")
+def listar_envios_repartidor(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Lista los envíos asignados al repartidor autenticado"""
+    
+    # Verificar que sea operador
+    if current_user.get("rol") != "operador":
+        raise HTTPException(status_code=403, detail="No autorizado")
+    
+    usuario = db.query(Usuario).filter(Usuario.email == current_user["sub"]).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    envios = db.query(Envio).filter(Envio.repartidor_id == usuario.id).all()
+    return envios

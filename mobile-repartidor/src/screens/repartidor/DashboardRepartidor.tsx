@@ -26,7 +26,7 @@ const DashboardRepartidor: React.FC = ({ navigation }: any) => {
 
   const cargarEnvios = async () => {
     try {
-      const response = await api.get('/api/envios');
+      const response = await api.get('/api/envios/repartidor/envios');
       // Filtrar solo envíos asignados a este repartidor
       setEnvios(response.data);
     } catch (error) {
